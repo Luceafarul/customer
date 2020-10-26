@@ -1,0 +1,10 @@
+.bsp/
+.bloop/
+.dotty-ide*
+.idea/
+.metals/
+*.worksheet.sc
+metals.sbt
+target/
+.vscode/
+*.iml
