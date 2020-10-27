@@ -8,7 +8,7 @@ import example.service.CustomerService
 
 import scala.concurrent.Future
 
-case class Routes(private val customerService: CustomerService) extends Directives with CustomerJson {
+case class CustomerController(private val customerService: CustomerService) extends Directives with CustomerJson {
   def route: Route = concat(
     get {
       pathPrefix("customers" / JavaUUID) { id =>

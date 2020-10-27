@@ -9,8 +9,10 @@ import scala.concurrent.Future
 
 final case class CustomerService() {
   def customer(id: UUID): Future[Option[Customer]] = Future {
-    Some(Customer("John Doe", Some(UUID.randomUUID())))
+    Some(Customer("John Doe", Some(id)))
   }
 
-  def create(customer: Customer): Future[Customer] = ???
+  def create(customer: Customer): Future[Customer] = Future {
+    Customer(customer.name, Some(UUID.randomUUID()))
+  }
 }
