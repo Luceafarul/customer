@@ -11,7 +11,7 @@ import scala.concurrent.Future
 case class CustomerController(private val customerService: CustomerService) extends Directives with CustomerJson {
   def route: Route = concat(
     get {
-      pathPrefix("customers" / JavaUUID) { id =>
+      pathPrefix("customers" / LongNumber) { id =>
         onSuccess(customerService.customer(id)) {
           case Some(customer) => complete(customer)
           case None => complete(StatusCodes.NotFound)

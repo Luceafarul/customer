@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 
-final case class Customer(name: String, id: Option[UUID] = None)
+final case class Customer(name: String, id: Option[Long] = None)
 
 trait UUIDJson extends SprayJsonSupport with DefaultJsonProtocol {
   implicit object UUIDJsonFormat extends JsonFormat[UUID] {
