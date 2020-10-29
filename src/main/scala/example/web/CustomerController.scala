@@ -3,12 +3,12 @@ package example.web
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.server.Route
-import example.domain.{Customer, CustomerJson}
+import example.domain.Customer
 import example.service.CustomerService
 
 import scala.concurrent.Future
 
-case class CustomerController(private val customerService: CustomerService) extends Directives with CustomerJson {
+case class CustomerController(private val customerService: CustomerService) extends Directives {
   def route: Route = concat(
     get {
       pathPrefix("customers" / LongNumber) { id =>
