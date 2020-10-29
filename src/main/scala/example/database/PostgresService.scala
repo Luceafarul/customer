@@ -1,9 +1,9 @@
 package example.database
 
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.JdbcBackend.Database
 
-class PostgresService {
-  def db: Database = Database.forConfig("database")
+class PostgresService extends DatabaseService {
+  override def db: Database = Database.forConfig("database")
 
   db.createSession()
 }

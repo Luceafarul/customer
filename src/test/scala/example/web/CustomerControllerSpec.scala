@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import example.config.Config
 import example.database.{FlywayService, PostgresService}
-import example.domain.{Customer, CustomerJson}
+import example.domain.Customer
 import example.repository.CustomerRepository
 import example.service.CustomerService
 import org.scalatest.BeforeAndAfterAll
@@ -15,7 +15,6 @@ class CustomerControllerSpec extends AnyWordSpec
   with Matchers
   with ScalatestRouteTest
   with BeforeAndAfterAll
-  with CustomerJson
   with Config {
 
   private val flywayService = new FlywayService(dbUrl, dbUser, dbPassword)
