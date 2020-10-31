@@ -5,7 +5,7 @@ import example.repository.CustomerRepository
 
 import scala.concurrent.Future
 
-final case class CustomerService(customerRepository: CustomerRepository) {
+class CustomerService(customerRepository: CustomerRepository) {
   def customer(id: Long): Future[Option[Customer]] =
     customerRepository.findById(id)
 

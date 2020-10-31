@@ -13,13 +13,15 @@ object HttpServerRoutingMinimal extends App {
   implicit val system = ActorSystem("consumer-system")
   implicit val executionContext = system.dispatcher
 
-  val databaseService = new PostgresService
+  private val databaseService = new PostgresService
 
-  val customerRepository = new CustomerRepository(databaseService)
+  private val customerRepository = new CustomerRepository(databaseService)
 
-  val routes = CustomerController(CustomerService(customerRepository))
+  private val customerService = new CustomerService(customerRepository)
 
-  val bindingFuture = Http().newServerAt("localhost", 8080).bind(routes.route)
+  private val routes = CustomerController(customerService)
+
+  private val bindingFuture = Http().newServerAt("localhost", 8080).bind(routes.route)
 
   println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
 
