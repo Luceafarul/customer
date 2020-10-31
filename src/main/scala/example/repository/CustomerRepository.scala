@@ -1,7 +1,7 @@
 package example.repository
 
 import example.database.DatabaseService
-import example.domain.Customer
+import example.domain.{Customer, CustomerTable}
 
 import scala.concurrent.Future
 
