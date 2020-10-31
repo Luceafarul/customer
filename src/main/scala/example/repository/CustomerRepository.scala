@@ -1,13 +1,13 @@
 package example.repository
 
-import java.util.UUID
-
-import example.database.PostgresService
+import example.database.DatabaseService
 import example.domain.Customer
 
 import scala.concurrent.Future
 
-class CustomerRepository(val databaseService: PostgresService) extends CustomerTable {
+class CustomerRepository(val databaseService: DatabaseService) extends Repository[Customer]
+  with CustomerTable {
+
   import slick.jdbc.PostgresProfile.api._
 
   def all: Future[Seq[Customer]] =
