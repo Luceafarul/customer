@@ -1,20 +1,34 @@
 package example.web
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route}
+import com.typesafe.scalalogging.Logger
 import example.domain.Customer
 import example.service.CustomerService
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
+import scala.util.control.NonFatal
 
 case class CustomerController(private val customerService: CustomerService) extends Directives {
+  private val log = Logger[CustomerController]
+  //  private val nonFatalHandler = ExceptionHandler {
+  //    case NonFatal(e) =>
+  //      log.error(s"Failed with: ${e.getMessage}")
+  //      complete(StatusCodes.BadRequest, s"Request failed with: ${e.getMessage}")
+  //  }
+
   def route: Route = concat(
     get {
       pathPrefix("customers" / LongNumber) { id =>
-        onSuccess(customerService.customer(id)) {
-          case Some(customer) => complete(customer)
-          case None => complete(StatusCodes.NotFound)
+        onComplete(customerService.customer(id)) {
+          case Success(c) => c match {
+            case Some(customer) => complete(customer)
+            case None => complete(StatusCodes.NotFound)
+          }
+          case Failure(e) if NonFatal(e) =>
+            log.error(s"Failed with: ${e.getMessage}")
+            complete(StatusCodes.BadRequest, s"Request failed with: ${e.getMessage}")
         }
       }
     },
@@ -22,8 +36,11 @@ case class CustomerController(private val customerService: CustomerService) exte
       path("customers") {
         entity(as[Customer]) { customer =>
           val created: Future[Customer] = customerService.create(customer)
-          onSuccess(created) { c =>
-            complete(c)
+          onComplete(created) {
+            case Success(c) => complete(c)
+            case Failure(e) if NonFatal(e) =>
+              log.error(s"Failed with: ${e.getMessage}")
+              complete(StatusCodes.BadRequest, s"Request failed with: ${e.getMessage}")
           }
         }
       }

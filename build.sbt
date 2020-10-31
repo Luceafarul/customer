@@ -20,5 +20,6 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-nop" % "1.6.4",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "org.postgresql" % "postgresql" % "42.2.12",
-  "org.flywaydb" % "flyway-core" % "7.1.0"
+  "org.flywaydb" % "flyway-core" % "7.1.0",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 )
