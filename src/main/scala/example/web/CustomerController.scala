@@ -10,7 +10,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
-case class CustomerController(private val customerService: CustomerService) extends Directives {
+class CustomerController(private val customerService: CustomerService) extends Directives {
   private val log = Logger[CustomerController]
 
   def route: Route = concat(
