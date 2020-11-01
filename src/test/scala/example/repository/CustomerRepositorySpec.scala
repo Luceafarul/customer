@@ -1,19 +1,32 @@
 package example.repository
 
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import example.config.Config
-import example.database.{FlywayService, PostgresService}
+import example.database.{DatabaseService, FlywayService}
 import example.domain.Customer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
+import slick.jdbc.JdbcBackend.Database
 
 class CustomerRepositorySpec extends AsyncWordSpec
   with Config
   with Matchers
-  with BeforeAndAfterAll {
+  with BeforeAndAfterAll
+  with ForAllTestContainer {
 
-  private val flywayService = new FlywayService(dbUrl, dbUser, dbPassword)
-  private val databaseService = new PostgresService()
+  override val container: PostgreSQLContainer = PostgreSQLContainer(
+    dockerImageNameOverride = "postgres:9.6",
+    databaseName = "customer_test"
+  )
+  container.start()
+
+  private val flywayService = new FlywayService(container.jdbcUrl, container.username, container.password)
+  private val databaseService = new DatabaseService {
+    override def db: Database = Database.forURL(container.jdbcUrl, container.username, container.password)
+
+    db.createSession()
+  }
   private val customerRepository = new CustomerRepository(databaseService)
 
   override protected def beforeAll(): Unit =

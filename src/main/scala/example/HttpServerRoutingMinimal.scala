@@ -19,7 +19,7 @@ object HttpServerRoutingMinimal extends App {
 
   private val customerService = new CustomerService(customerRepository)
 
-  private val routes = CustomerController(customerService)
+  private val routes = new CustomerController(customerService)
 
   private val bindingFuture = Http().newServerAt("localhost", 8080).bind(routes.route)
 
