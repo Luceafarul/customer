@@ -27,7 +27,7 @@ class CustomerServiceSpec extends AnyWordSpec with Matchers with MockFactory {
 
       (customerRepositoryStub.findById _).when(1L).returns(existedCustomer)
 
-      customerService.customer(id = 1L) shouldBe existedCustomer
+      customerService.get(id = 1L) shouldBe existedCustomer
     }
 
     "return None if customer does not exist" in {
@@ -35,7 +35,7 @@ class CustomerServiceSpec extends AnyWordSpec with Matchers with MockFactory {
 
       (customerRepositoryStub.findById _).when(*).returns(notExistResponse)
 
-      customerService.customer(id = 777) shouldBe notExistResponse
+      customerService.get(id = 777) shouldBe notExistResponse
     }
   }
 }

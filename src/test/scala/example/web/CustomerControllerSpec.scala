@@ -1,6 +1,7 @@
 package example.web
 
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import example.config.Config
@@ -8,16 +9,20 @@ import example.database.{DatabaseService, FlywayService}
 import example.domain.Customer
 import example.repository.CustomerRepository
 import example.service.CustomerService
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import slick.jdbc.JdbcBackend.Database
+
+import scala.concurrent.Future
 
 class CustomerControllerSpec extends AnyWordSpec
   with Matchers
   with ScalatestRouteTest
   with BeforeAndAfterAll
   with Config
+  with MockFactory
   with ForAllTestContainer {
 
   override val container: PostgreSQLContainer = PostgreSQLContainer(
@@ -36,6 +41,10 @@ class CustomerControllerSpec extends AnyWordSpec
   private val customerService = new CustomerService(customerRepository)
   private val customerController = new CustomerController(customerService)
   private val route = customerController.route
+
+  private val customerServiceStub = stub[CustomerService]
+  private val customerControllerWithStub = new CustomerController(customerServiceStub)
+  private val routeWithStub = customerControllerWithStub.route
 
   override protected def beforeAll(): Unit =
     flywayService.migrateDatabase
@@ -66,23 +75,40 @@ class CustomerControllerSpec extends AnyWordSpec
       }
     }
 
-    "return error when we passed wrong id format" in {
-      val id = "this_is_not_long_id"
-
-      Get(s"/customers/$id") ~> route ~> check {
-        handled shouldBe false
-      }
-    }
-
     "return created customer" in {
       val customer = Customer("Marcus Aurelius")
 
-      Post(s"/customers", customer) ~> route ~> check {
+      Post("/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
 
         val created = responseAs[Customer]
         created.name shouldBe customer.name
         created.id shouldBe defined
+      }
+    }
+
+    "return BadRequest when failed create customer" in {
+      val customer = Customer("Marcus Aurelius")
+
+      (customerServiceStub.create _)
+        .when(customer)
+        .returns(Future.failed(new UnsupportedOperationException))
+
+      Post("/customers", customer) ~> Route.seal(routeWithStub) ~> check {
+        status shouldBe StatusCodes.BadRequest
+      }
+    }
+
+    "return BadRequest when failed retrieve customer" in {
+      val customer = Customer("Marcus Aurelius", Some(1L))
+      val customerId = customer.id.get
+
+      (customerServiceStub.get _)
+        .when(customerId)
+        .returns(Future.failed(new UnsupportedOperationException))
+
+      Get(s"/customers/$customerId") ~> Route.seal(routeWithStub) ~> check {
+        status shouldBe StatusCodes.BadRequest
       }
     }
   }

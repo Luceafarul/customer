@@ -16,12 +16,13 @@ class CustomerController(private val customerService: CustomerService) extends D
   def route: Route = concat(
     get {
       pathPrefix("customers" / LongNumber) { id =>
-        onComplete(customerService.customer(id)) {
+        onComplete(customerService.get(id)) {
           case Success(c) => c match {
             case Some(customer) => complete(customer)
             case None => complete(StatusCodes.NotFound)
           }
           case Failure(e) if NonFatal(e) => logAndReturnBadRequest(e)
+          case _ => logAndReturnServerError
         }
       }
     },
@@ -32,6 +33,7 @@ class CustomerController(private val customerService: CustomerService) extends D
           onComplete(created) {
             case Success(c) => complete(c)
             case Failure(e) if NonFatal(e) => logAndReturnBadRequest(e)
+            case Failure(e) => logAndReturnServerError
           }
         }
       }
@@ -41,5 +43,10 @@ class CustomerController(private val customerService: CustomerService) extends D
   private def logAndReturnBadRequest(e: Throwable): StandardRoute = {
     log.error(s"Failed with: ${e.getMessage}")
     complete(StatusCodes.BadRequest, s"Request failed with: ${e.getMessage}")
+  }
+
+  private def logAndReturnServerError: StandardRoute = {
+    log.error(s"Server error")
+    complete(StatusCodes.InternalServerError)
   }
 }
