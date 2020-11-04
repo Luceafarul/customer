@@ -46,6 +46,10 @@ class CustomerControllerSpec extends AnyWordSpec
   private val customerControllerWithStub = new CustomerController(customerServiceStub)
   private val routeWithStub = customerControllerWithStub.route
 
+  private val customer = Customer("Marcus Aurelius")
+  private val existedCustomer = Customer("Marcus Aurelius", Some(1L))
+  private val existedCustomerId = existedCustomer.id.get
+
   override protected def beforeAll(): Unit =
     flywayService.migrateDatabase
 
@@ -62,12 +66,10 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return customer by id if existing" in {
-      val customer = Customer("Marcus Aurelius")
-
       for {
         createdCustomer <- customerRepository.create(customer)
       } yield {
-        Get(s"/customer/${createdCustomer.id.get}") ~> route ~> check {
+        Get(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
           status shouldBe StatusCodes.OK
           val foundCustomer = responseAs[Customer]
           foundCustomer shouldBe createdCustomer
@@ -76,8 +78,6 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return created customer" in {
-      val customer = Customer("Marcus Aurelius")
-
       Post("/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
 
@@ -88,8 +88,6 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return BadRequest when failed create customer" in {
-      val customer = Customer("Marcus Aurelius")
-
       (customerServiceStub.create _)
         .when(customer)
         .returns(Future.failed(new UnsupportedOperationException))
@@ -100,15 +98,32 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return BadRequest when failed retrieve customer" in {
-      val customer = Customer("Marcus Aurelius", Some(1L))
-      val customerId = customer.id.get
-
       (customerServiceStub.get _)
-        .when(customerId)
+        .when(existedCustomerId)
         .returns(Future.failed(new UnsupportedOperationException))
 
-      Get(s"/customers/$customerId") ~> Route.seal(routeWithStub) ~> check {
+      Get(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.BadRequest
+      }
+    }
+
+    "return InternalServerError when failed to create customer" in {
+      (customerServiceStub.create _)
+        .when(customer)
+        .returns(Future.failed(new OutOfMemoryError("Exception for tests")))
+
+      Post("/customers", customer) ~> Route.seal(routeWithStub) ~> check {
+        status shouldBe StatusCodes.InternalServerError
+      }
+    }
+
+    "return InternalServerError when failed retrieve customer" in {
+      (customerServiceStub.get _)
+        .when(existedCustomerId)
+        .returns(Future.failed(new OutOfMemoryError("Exception for tests")))
+
+      Get(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+        status shouldBe StatusCodes.InternalServerError
       }
     }
   }

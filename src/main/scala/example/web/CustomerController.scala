@@ -21,8 +21,8 @@ class CustomerController(private val customerService: CustomerService) extends D
             case Some(customer) => complete(customer)
             case None => complete(StatusCodes.NotFound)
           }
-          case Failure(e) if NonFatal(e) => logAndReturnBadRequest(e)
-          case _ => logAndReturnServerError
+          case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
+          case Failure(e) => logAndReturnServerError(e)
         }
       }
     },
@@ -32,8 +32,8 @@ class CustomerController(private val customerService: CustomerService) extends D
           val created: Future[Customer] = customerService.create(customer)
           onComplete(created) {
             case Success(c) => complete(c)
-            case Failure(e) if NonFatal(e) => logAndReturnBadRequest(e)
-            case Failure(e) => logAndReturnServerError
+            case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
+            case Failure(e) => logAndReturnServerError(e)
           }
         }
       }
@@ -45,8 +45,8 @@ class CustomerController(private val customerService: CustomerService) extends D
     complete(StatusCodes.BadRequest, s"Request failed with: ${e.getMessage}")
   }
 
-  private def logAndReturnServerError: StandardRoute = {
-    log.error(s"Server error")
-    complete(StatusCodes.InternalServerError)
+  private def logAndReturnServerError(e: Throwable): StandardRoute = {
+    log.error(s"Server error: ${e.getCause.getMessage}")
+    complete(StatusCodes.InternalServerError, s"Request failed with: ${e.getCause.getMessage}")
   }
 }
