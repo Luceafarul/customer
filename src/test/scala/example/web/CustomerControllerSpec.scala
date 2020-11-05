@@ -1,8 +1,10 @@
 package example.web
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.stream.Materializer
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import example.config.Config
 import example.database.{DatabaseService, FlywayService}
@@ -10,12 +12,12 @@ import example.domain.Customer
 import example.repository.CustomerRepository
 import example.service.CustomerService
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, stats}
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.wordspec.{AnyWordSpec, AsyncWordSpec}
 import slick.jdbc.JdbcBackend.Database
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class CustomerControllerSpec extends AnyWordSpec
   with Matchers
@@ -66,14 +68,16 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return customer by id if existing" in {
-      for {
-        createdCustomer <- customerRepository.create(customer)
-      } yield {
-        Get(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
-          status shouldBe StatusCodes.OK
-          val foundCustomer = responseAs[Customer]
-          foundCustomer shouldBe createdCustomer
-        }
+      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Customer]
+      }
+
+      Get(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
+        status shouldBe StatusCodes.OK
+
+        val foundCustomer = responseAs[Customer]
+        foundCustomer shouldBe createdCustomer
       }
     }
 
@@ -87,13 +91,18 @@ class CustomerControllerSpec extends AnyWordSpec
       }
     }
 
-    "return BadRequest when failed create customer" in {
-      (customerServiceStub.create _)
-        .when(customer)
-        .returns(Future.failed(new UnsupportedOperationException))
+    "deleted existed customer by id" in {
+      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Customer]
+      }
 
-      Post("/customers", customer) ~> Route.seal(routeWithStub) ~> check {
-        status shouldBe StatusCodes.BadRequest
+      Delete(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
+        status shouldBe StatusCodes.NoContent
+      }
+
+      Get(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
+        status shouldBe StatusCodes.NotFound
       }
     }
 
@@ -103,6 +112,26 @@ class CustomerControllerSpec extends AnyWordSpec
         .returns(Future.failed(new UnsupportedOperationException))
 
       Get(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+        status shouldBe StatusCodes.BadRequest
+      }
+    }
+
+    "return InternalServerError when failed retrieve customer" in {
+      (customerServiceStub.get _)
+        .when(existedCustomerId)
+        .returns(Future.failed(new OutOfMemoryError("Exception for tests")))
+
+      Get(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+        status shouldBe StatusCodes.InternalServerError
+      }
+    }
+
+    "return BadRequest when failed create customer" in {
+      (customerServiceStub.create _)
+        .when(customer)
+        .returns(Future.failed(new UnsupportedOperationException))
+
+      Post("/customers", customer) ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.BadRequest
       }
     }
@@ -117,12 +146,22 @@ class CustomerControllerSpec extends AnyWordSpec
       }
     }
 
-    "return InternalServerError when failed retrieve customer" in {
-      (customerServiceStub.get _)
+    "return BadRequest when failed to delete customer" in {
+      (customerServiceStub.delete _)
+        .when(existedCustomerId)
+        .returns(Future.failed(new UnsupportedOperationException))
+
+      Delete(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+        status shouldBe StatusCodes.BadRequest
+      }
+    }
+
+    "return InternalServerError when failed to delete customer" in {
+      (customerServiceStub.delete _)
         .when(existedCustomerId)
         .returns(Future.failed(new OutOfMemoryError("Exception for tests")))
 
-      Get(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+      Delete(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
     }

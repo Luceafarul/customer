@@ -37,6 +37,15 @@ class CustomerController(private val customerService: CustomerService) extends D
           }
         }
       }
+    },
+    delete {
+      path("customers" / LongNumber) { id =>
+        onComplete(customerService.delete(id)) {
+          case Success(n) => complete(StatusCodes.NoContent)
+          case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
+          case Failure(e) => logAndReturnServerError(e)
+        }
+      }
     }
   )
 

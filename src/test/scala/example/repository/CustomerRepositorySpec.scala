@@ -71,5 +71,16 @@ class CustomerRepositorySpec extends AsyncWordSpec
         foundCustomer <- customerRepository.findById(createdCustomer.id.get)
       } yield foundCustomer should not be defined
     }
+
+    "delete operation return count of deleted customers" in {
+      val customer = Customer("John Doe")
+
+      for {
+        createdCustomer <- customerRepository.create(customer)
+        n <- customerRepository.delete(createdCustomer.id.get)
+      } yield n shouldBe 1
+
+      customerRepository.delete(777).map { n => n shouldBe 0}
+    }
   }
 }
