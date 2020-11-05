@@ -9,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.concurrent.Future
 
 class CustomerServiceSpec extends AnyWordSpec with Matchers with MockFactory {
-  val customerRepositoryStub = stub[CustomerRepository]
+  val customerRepositoryStub: CustomerRepository = stub[CustomerRepository]
   val customerService = new CustomerService(customerRepositoryStub)
 
   "CustomerService" should {
@@ -36,6 +36,16 @@ class CustomerServiceSpec extends AnyWordSpec with Matchers with MockFactory {
       (customerRepositoryStub.findById _).when(*).returns(notExistResponse)
 
       customerService.get(id = 777) shouldBe notExistResponse
+    }
+
+    "delete customer by id" in {
+      val customerId = 1L
+
+      (customerRepositoryStub.delete _)
+        .when(customerId)
+        .returns(Future.successful(1))
+
+      customerService.delete(customerId)
     }
   }
 }
