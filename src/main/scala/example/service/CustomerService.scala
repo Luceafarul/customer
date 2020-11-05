@@ -1,14 +1,17 @@
 package example.service
 
 import example.domain.Customer
-import example.repository.CustomerRepository
+import example.repository.Repository
 
 import scala.concurrent.Future
 
-class CustomerService(customerRepository: CustomerRepository) {
+class CustomerService(repository: Repository[Customer]) {
   def get(id: Long): Future[Option[Customer]] =
-    customerRepository.findById(id)
+    repository.findById(id)
 
   def create(customer: Customer): Future[Customer] =
-    customerRepository.create(customer)
+    repository.create(customer)
+
+  def delete(id: Long): Future[Int] =
+    repository.delete(id)
 }
