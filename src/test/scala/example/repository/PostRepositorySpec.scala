@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import example.config.Config
 import example.database.{DatabaseService, FlywayService}
-import example.domain.Post
+import example.domain.{Customer, Post}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
@@ -31,11 +31,20 @@ class PostRepositorySpec extends AsyncWordSpec
   }
 
   private val postRepository = new PostRepository(databaseService)
+  private val customerRepository = new CustomerRepository(databaseService)
 
-  private val post = Post("This is test post", LocalDateTime.now, 1L)
+  private var post = Post("This is test post", LocalDateTime.now, 0L)
+  private val customer = Customer("John Doe")
 
-  override protected def beforeAll(): Unit =
+  override protected def beforeAll(): Unit = {
     flywayService.migrateDatabase
+
+    for {
+      createdCustomer <- customerRepository.create(customer)
+    } yield {
+      post = post.copy(userId = createdCustomer.id.get)
+    }
+  }
 
   override protected def afterAll(): Unit =
     flywayService.dropDatabase
