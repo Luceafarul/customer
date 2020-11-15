@@ -1,23 +1,23 @@
 package example.web
 
-import akka.actor.ActorSystem
+import java.time.LocalDateTime
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.stream.Materializer
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import example.config.Config
 import example.database.{DatabaseService, FlywayService}
-import example.domain.Customer
-import example.repository.CustomerRepository
-import example.service.CustomerService
+import example.domain.{Customer, Post}
+import example.repository.{CustomerRepository, PostRepository}
+import example.service.{CustomerService, PostService}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{BeforeAndAfterAll, stats}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.{AnyWordSpec, AsyncWordSpec}
+import org.scalatest.wordspec.AnyWordSpec
 import slick.jdbc.JdbcBackend.Database
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class CustomerControllerSpec extends AnyWordSpec
   with Matchers
@@ -40,17 +40,24 @@ class CustomerControllerSpec extends AnyWordSpec
     db.createSession()
   }
   private val customerRepository = new CustomerRepository(databaseService)
+  private val postRepository = new PostRepository(databaseService)
   private val customerService = new CustomerService(customerRepository)
-  private val customerController = new CustomerController(customerService)
+  private val postService = new PostService(postRepository)
+  private val customerController = new CustomerController(customerService, postService)
   private val route = customerController.route
 
   private val customerServiceStub = stub[CustomerService]
-  private val customerControllerWithStub = new CustomerController(customerServiceStub)
+  private val postServiceStub = stub[PostService]
+  private val customerControllerWithStub = new CustomerController(customerServiceStub, postServiceStub)
   private val routeWithStub = customerControllerWithStub.route
 
   private val customer = Customer("Marcus Aurelius")
   private val existedCustomer = Customer("Marcus Aurelius", Some(1L))
   private val existedCustomerId = existedCustomer.id.get
+
+  private val post = example.domain.Post("This is test post", LocalDateTime.now)
+  private val existedPost = example.domain.Post("This is test post", LocalDateTime.now, 1L, Some(1L))
+  private val existedPostId = existedPost.id.get
 
   override protected def beforeAll(): Unit =
     flywayService.migrateDatabase
@@ -102,6 +109,94 @@ class CustomerControllerSpec extends AnyWordSpec
       }
 
       Get(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
+        status shouldBe StatusCodes.NotFound
+      }
+    }
+
+    "return NotFound if post does not exist" in {
+      val notExistedPostId = 777
+
+      Get(s"/api/customers/posts/$notExistedPostId") ~> route ~> check {
+        status shouldBe StatusCodes.NotFound
+      }
+    }
+
+    "return created post" in {
+      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Customer]
+      }
+
+      Post(s"/api/customers/${createdCustomer.id.get}/posts", post) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+
+        val created = responseAs[Post]
+        created.content shouldBe post.content
+        created.createdAt shouldBe post.createdAt
+        created.customerId shouldBe createdCustomer.id.get
+        created.id shouldBe defined
+      }
+    }
+
+    "return post by id if existing" in {
+      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Customer]
+      }
+
+      val createdPost = Post(s"/api/customers/${createdCustomer.id.get}/posts", post) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Post]
+      }
+
+      Get(s"/api/customers/posts/${createdPost.id.get}") ~> route ~> check {
+        status shouldBe StatusCodes.OK
+
+        val foundPost = responseAs[Post]
+        foundPost shouldBe createdPost
+      }
+    }
+
+    "return all customer's post by customer id" in {
+      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Customer]
+      }
+
+      val firstPost = Post(s"/api/customers/${createdCustomer.id.get}/posts", post) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Post]
+      }
+
+      val secondPost = Post(s"/api/customers/${createdCustomer.id.get}/posts", post) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Post]
+      }
+
+      Get(s"/api/customers/${createdCustomer.id.get}/posts") ~> route ~> check {
+        status shouldBe StatusCodes.OK
+
+        val foundPosts = responseAs[Seq[Post]]
+        foundPosts should contain only(firstPost, secondPost)
+      }
+    }
+
+    "deleted existed post by id" in {
+      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Customer]
+      }
+
+      val createdPost = Post(s"/api/customers/${createdCustomer.id.get}/posts", post) ~> route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Post]
+      }
+
+      Delete(s"/api/customers/posts/${createdPost.id.get}") ~> route ~> check {
+        status shouldBe StatusCodes.NoContent
+      }
+
+      Get(s"/api/customers/posts/${createdPost.id.get}") ~> route ~> check {
         status shouldBe StatusCodes.NotFound
       }
     }
@@ -164,6 +259,16 @@ class CustomerControllerSpec extends AnyWordSpec
       Delete(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
+    }
+  }
+
+  "return BadRequest when failed retrieve post" in {
+    (postServiceStub.getById _)
+      .when(existedPostId)
+      .returns(Future.failed(new UnsupportedOperationException))
+
+    Get(s"/api/customers/posts/$existedPostId") ~> Route.seal(routeWithStub) ~> check {
+      status shouldBe StatusCodes.BadRequest
     }
   }
 }

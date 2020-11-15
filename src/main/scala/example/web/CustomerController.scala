@@ -1,21 +1,22 @@
 package example.web
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, ExceptionHandler, Route, StandardRoute}
+import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import com.typesafe.scalalogging.Logger
-import example.domain.Customer
-import example.service.CustomerService
+import example.domain.{Customer, Post}
+import example.service.{CustomerService, PostService}
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
-class CustomerController(private val customerService: CustomerService) extends Directives {
+class CustomerController(private val customerService: CustomerService,
+                         private val postService: PostService) extends Directives {
   private val log = Logger[CustomerController]
 
   def route: Route = concat(
     get {
-      pathPrefix("customers" / LongNumber) { id =>
+      path("customers" / LongNumber) { id =>
         onComplete(customerService.get(id)) {
           case Success(c) => c match {
             case Some(customer) => complete(customer)
@@ -41,7 +42,49 @@ class CustomerController(private val customerService: CustomerService) extends D
     delete {
       path("customers" / LongNumber) { id =>
         onComplete(customerService.delete(id)) {
-          case Success(n) => complete(StatusCodes.NoContent)
+          case Success(_) => complete(StatusCodes.NoContent)
+          case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
+          case Failure(e) => logAndReturnServerError(e)
+        }
+      }
+    },
+    get {
+      path("api" / "customers" / "posts" / LongNumber) { postId =>
+        onComplete(postService.getById(postId)) {
+          case Success(post) => post match {
+            case Some(p) => complete(p)
+            case None => complete(StatusCodes.NotFound)
+          }
+          case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
+          case Failure(e) => logAndReturnServerError(e)
+        }
+      }
+    },
+    get {
+      path("api" / "customers" / LongNumber / "posts") { customerId =>
+        onComplete(postService.getAllByCustomerId(customerId)) {
+          case Success(posts) => complete(posts)
+          case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
+          case Failure(e) => logAndReturnServerError(e)
+        }
+      }
+    },
+    post {
+      path("api" / "customers" / LongNumber / "posts") { customerId =>
+        entity(as[Post]) { post =>
+          val created: Future[Post] = postService.create(post.copy(customerId = customerId))
+          onComplete(created) {
+            case Success(p) => complete(p)
+            case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
+            case Failure(e) => logAndReturnServerError(e)
+          }
+        }
+      }
+    },
+    delete {
+      path("api" / "customers" / "posts" / LongNumber) { postId =>
+        onComplete(postService.delete(postId)) {
+          case Success(_) => complete(StatusCodes.NoContent)
           case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
           case Failure(e) => logAndReturnServerError(e)
         }

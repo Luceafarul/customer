@@ -3,8 +3,8 @@ package example
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import example.database.PostgresService
-import example.repository.CustomerRepository
-import example.service.CustomerService
+import example.repository.{CustomerRepository, PostRepository}
+import example.service.{CustomerService, PostService}
 import example.web.CustomerController
 
 import scala.io.StdIn
@@ -17,9 +17,13 @@ object HttpServerRoutingMinimal extends App {
 
   private val customerRepository = new CustomerRepository(databaseService)
 
+  private val postRepository = new PostRepository(databaseService)
+
   private val customerService = new CustomerService(customerRepository)
 
-  private val routes = new CustomerController(customerService)
+  private val postService = new PostService(postRepository)
+
+  private val routes = new CustomerController(customerService, postService)
 
   private val bindingFuture = Http().newServerAt("localhost", 8080).bind(routes.route)
 
