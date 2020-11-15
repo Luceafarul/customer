@@ -8,7 +8,7 @@ import slick.jdbc.PostgresProfile.api._
 import slick.lifted.ProvenShape
 import spray.json._
 
-final case class Post(content: String, createdDate: LocalDateTime, userId: Long, id: Option[Long] = None)
+final case class Post(content: String, createdAt: LocalDateTime, userId: Long, id: Option[Long] = None)
 
 object Post extends SprayJsonSupport with DefaultJsonProtocol {
 
