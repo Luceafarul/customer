@@ -42,7 +42,7 @@ class PostRepositorySpec extends AsyncWordSpec
     for {
       createdCustomer <- customerRepository.create(customer)
     } yield {
-      post = post.copy(userId = createdCustomer.id.get)
+      post = post.copy(customerId = createdCustomer.id.get)
     }
   }
 
@@ -59,7 +59,7 @@ class PostRepositorySpec extends AsyncWordSpec
         createdPost.id shouldBe defined
         createdPost.content shouldBe post.content
         createdPost.createdAt shouldBe post.createdAt
-        createdPost.userId shouldBe post.userId
+        createdPost.customerId shouldBe post.customerId
       }
 
       postRepository.all.map { posts => posts.size shouldBe 1 }
@@ -72,6 +72,18 @@ class PostRepositorySpec extends AsyncWordSpec
       } yield {
         foundPost shouldBe defined
         foundPost.get shouldBe createdPost
+      }
+    }
+
+    "find posts by customer id" in {
+      for {
+        secondCustomer <- customerRepository.create(Customer("John Gold"))
+        firstPost <- postRepository.create(post.copy(customerId = secondCustomer.id.get))
+        secondPost <- postRepository.create(post.copy(customerId = secondCustomer.id.get))
+        foundPosts <- postRepository.allByCustomerId(secondCustomer.id.get)
+      } yield {
+        foundPosts.size shouldBe 2
+        foundPosts should contain only(firstPost, secondPost)
       }
     }
 

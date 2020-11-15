@@ -8,7 +8,7 @@ import slick.jdbc.PostgresProfile.api._
 import slick.lifted.ProvenShape
 import spray.json._
 
-final case class Post(content: String, createdAt: LocalDateTime, userId: Long, id: Option[Long] = None)
+final case class Post(content: String, createdAt: LocalDateTime, customerId: Long, id: Option[Long] = None)
 
 object Post extends SprayJsonSupport with DefaultJsonProtocol {
 
@@ -34,9 +34,9 @@ trait PostTable {
 
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("created_at")
 
-    def userId: Rep[Long] = column[Long]("user_id")
+    def customerId: Rep[Long] = column[Long]("customer_id")
 
-    override def * : ProvenShape[Post] = (content, createdAt, userId, id) <> ((Post.apply _).tupled, Post.unapply)
+    override def * : ProvenShape[Post] = (content, createdAt, customerId, id) <> ((Post.apply _).tupled, Post.unapply)
   }
 
   protected val posts = TableQuery[Posts]
