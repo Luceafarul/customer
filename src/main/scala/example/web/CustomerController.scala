@@ -49,8 +49,8 @@ class CustomerController(private val customerService: CustomerService,
       }
     },
     get {
-      path("api" / "customers" / "posts" / LongNumber) { postId =>
-        onComplete(postService.getById(postId)) {
+      path("api" / "customers" / LongNumber / "posts" / LongNumber) { (customerId, postId) =>
+        onComplete(postService.getByCustomerIdAndPostId(customerId, postId)) {
           case Success(post) => post match {
             case Some(p) => complete(p)
             case None => complete(StatusCodes.NotFound)

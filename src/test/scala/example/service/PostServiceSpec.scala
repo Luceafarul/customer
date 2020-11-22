@@ -33,17 +33,17 @@ class PostServiceSpec extends AnyWordSpec with Matchers with MockFactory {
         )
       )
 
-      (postRepositoryStub.findById _).when(1L).returns(existedPost)
+      (postRepositoryStub.findByCustomerIdAndPost _).when(1L, 1L).returns(existedPost)
 
-      postService.getById(id = 1L) shouldBe existedPost
+      postService.getByCustomerIdAndPostId(customerId =1L, postId = 1L) shouldBe existedPost
     }
 
     "return None if post does not exist" in {
       val notExistResponse = Future.successful(None)
 
-      (postRepositoryStub.findById _).when(*).returns(notExistResponse)
+      (postRepositoryStub.findByCustomerIdAndPost _).when(*, *).returns(notExistResponse)
 
-      postService.getById(id = 777) shouldBe notExistResponse
+      postService.getByCustomerIdAndPostId(customerId = 1, postId = 777) shouldBe notExistResponse
     }
 
     "return all posts by customer id" in {

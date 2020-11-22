@@ -116,7 +116,7 @@ class CustomerControllerSpec extends AnyWordSpec
     "return NotFound if post does not exist" in {
       val notExistedPostId = 777
 
-      Get(s"/api/customers/posts/$notExistedPostId") ~> route ~> check {
+      Get(s"/api/customers/$existedCustomerId/posts/$notExistedPostId") ~> route ~> check {
         status shouldBe StatusCodes.NotFound
       }
     }
@@ -149,7 +149,7 @@ class CustomerControllerSpec extends AnyWordSpec
         responseAs[Post]
       }
 
-      Get(s"/api/customers/posts/${createdPost.id.get}") ~> route ~> check {
+      Get(s"/api/customers/${createdCustomer.id.get}/posts/${createdPost.id.get}") ~> route ~> check {
         status shouldBe StatusCodes.OK
 
         val foundPost = responseAs[Post]
@@ -196,7 +196,7 @@ class CustomerControllerSpec extends AnyWordSpec
         status shouldBe StatusCodes.NoContent
       }
 
-      Get(s"/api/customers/posts/${createdPost.id.get}") ~> route ~> check {
+      Get(s"/api/customers/${createdCustomer.id.get}/posts/${createdPost.id.get}") ~> route ~> check {
         status shouldBe StatusCodes.NotFound
       }
     }
@@ -263,11 +263,11 @@ class CustomerControllerSpec extends AnyWordSpec
   }
 
   "return BadRequest when failed retrieve post" in {
-    (postServiceStub.getById _)
-      .when(existedPostId)
+    (postServiceStub.getByCustomerIdAndPostId _)
+      .when(existedCustomerId, existedPostId)
       .returns(Future.failed(new UnsupportedOperationException))
 
-    Get(s"/api/customers/posts/$existedPostId") ~> Route.seal(routeWithStub) ~> check {
+    Get(s"/api/customers/$existedCustomerId/posts/$existedPostId") ~> Route.seal(routeWithStub) ~> check {
       status shouldBe StatusCodes.BadRequest
     }
   }

@@ -21,6 +21,9 @@ class PostRepository(databaseService: DatabaseService) extends Repository[Post] 
   override def delete(id: Long): Future[Int] =
     databaseService.db.run(posts.filter(_.id === id).delete)
 
+  def findByCustomerIdAndPost(customerId: Long, postId: Long): Future[Option[Post]] =
+    databaseService.db.run(posts.filter(post => post.customerId === customerId && post.id === postId).result.headOption)
+
   def allByCustomerId(customerId: Long): Future[Seq[Post]] =
     databaseService.db.run(posts.filter(_.customerId === customerId).result)
 }
