@@ -29,6 +29,8 @@ class CustomerRepositorySpec extends AsyncWordSpec
   }
   private val customerRepository = new CustomerRepository(databaseService)
 
+  private val customer = Customer("John Doe")
+
   override protected def beforeAll(): Unit =
     flywayService.migrateDatabase
 
@@ -41,18 +43,15 @@ class CustomerRepositorySpec extends AsyncWordSpec
     }
 
     "create valid customer" in {
-      val customer = Customer("John Doe")
-
       customerRepository.create(customer).flatMap { createdCustomer =>
         createdCustomer.id shouldBe defined
         createdCustomer.name shouldBe "John Doe"
+
+        customerRepository.all.map { customers => customers.size shouldBe 1 }
       }
-      customerRepository.all.map { customers => customers.size shouldBe 1 }
     }
 
     "find customer by id" in {
-      val customer = Customer("John Doe")
-
       for {
         createdCustomer <- customerRepository.create(customer)
         foundCustomer <- customerRepository.findById(createdCustomer.id.get)
@@ -63,8 +62,6 @@ class CustomerRepositorySpec extends AsyncWordSpec
     }
 
     "delete customer by id" in {
-      val customer = Customer("John Doe")
-
       for {
         createdCustomer <- customerRepository.create(customer)
         _ <- customerRepository.delete(createdCustomer.id.get)
@@ -73,14 +70,12 @@ class CustomerRepositorySpec extends AsyncWordSpec
     }
 
     "delete operation return count of deleted customers" in {
-      val customer = Customer("John Doe")
-
       for {
         createdCustomer <- customerRepository.create(customer)
         n <- customerRepository.delete(createdCustomer.id.get)
       } yield n shouldBe 1
 
-      customerRepository.delete(777).map { n => n shouldBe 0}
+      customerRepository.delete(777).map { n => n shouldBe 0 }
     }
   }
 }
