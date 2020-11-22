@@ -7,6 +7,7 @@ scalaVersion := "2.13.3"
 val AkkaVersion = "2.6.8"
 val AkkaHttpVersion = "10.2.1"
 val testcontainersScalaVersion = "0.38.4"
+val circeVersion = "0.13.0"
 
 Test / parallelExecution := false
 
@@ -18,6 +19,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion,
   "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion,
+  "de.heikoseeberger" %% "akka-http-circe" % "1.31.0",
   "org.scalatest" %% "scalatest" % "3.2.2" % "test",
   "org.scalamock" %% "scalamock" % "4.4.0" % "test",
   "com.typesafe.slick" %% "slick" % "3.3.3",
@@ -29,3 +31,9 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaVersion % "test",
   "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % "test",
 )
+
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
