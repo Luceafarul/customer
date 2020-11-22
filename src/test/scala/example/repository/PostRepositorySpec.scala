@@ -55,14 +55,14 @@ class PostRepositorySpec extends AsyncWordSpec
     }
 
     "create valid post" in {
-      postRepository.create(post).map { createdPost =>
+      postRepository.create(post).flatMap { createdPost =>
         createdPost.id shouldBe defined
         createdPost.content shouldBe post.content
         createdPost.createdAt shouldBe post.createdAt
         createdPost.customerId shouldBe post.customerId
-      }
 
-      postRepository.all.map { posts => posts.size shouldBe 1 }
+        postRepository.all.map { posts => posts.size shouldBe 1 }
+      }
     }
 
     "find post by id" in {
@@ -84,6 +84,18 @@ class PostRepositorySpec extends AsyncWordSpec
       } yield {
         foundPosts.size shouldBe 2
         foundPosts should contain only(firstPost, secondPost)
+      }
+    }
+
+    "find concrete post by customer id and post id" in {
+      for {
+        secondCustomer <- customerRepository.create(Customer("John Gold"))
+        firstPost <- postRepository.create(post.copy(customerId = secondCustomer.id.get))
+        secondPost <- postRepository.create(post.copy(customerId = secondCustomer.id.get))
+        foundPost <- postRepository.findByCustomerIdAndPost(secondCustomer.id.get, secondPost.id.get)
+      } yield {
+        foundPost shouldBe defined
+        foundPost.get shouldBe secondPost
       }
     }
 

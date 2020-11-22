@@ -35,7 +35,7 @@ class PostServiceSpec extends AnyWordSpec with Matchers with MockFactory {
 
       (postRepositoryStub.findByCustomerIdAndPost _).when(1L, 1L).returns(existedPost)
 
-      postService.getByCustomerIdAndPostId(customerId =1L, postId = 1L) shouldBe existedPost
+      postService.getByCustomerIdAndPostId(customerId = 1L, postId = 1L) shouldBe existedPost
     }
 
     "return None if post does not exist" in {
@@ -58,6 +58,39 @@ class PostServiceSpec extends AnyWordSpec with Matchers with MockFactory {
         .returns(searchAllByCustomerId)
 
       postService.getAllByCustomerId(customerId)
+    }
+
+    "return post customer id and post id" in {
+      val customerId = 2L
+      val fourthPost = Post("This is fourth test post", LocalDateTime.now, customerId)
+      val fourthPostId = 4L
+
+      val foundPost = Future.successful(Option(fourthPost))
+
+      (postRepositoryStub.findByCustomerIdAndPost _)
+        .when(customerId, fourthPostId)
+        .returns(foundPost)
+
+      postService.getByCustomerIdAndPostId(customerId, fourthPostId)
+    }
+
+    "return None if customer id or post id does not exists" in {
+      val customerId = 2L
+      val fifthPostId = 5L
+
+      val notExistResponse = Future.successful(None)
+
+      (postRepositoryStub.findByCustomerIdAndPost _)
+        .when(customerId, *)
+        .returns(notExistResponse)
+
+      postService.getByCustomerIdAndPostId(customerId, fifthPostId)
+
+      (postRepositoryStub.findByCustomerIdAndPost _)
+        .when(*, fifthPostId)
+        .returns(notExistResponse)
+
+      postService.getByCustomerIdAndPostId(customerId, fifthPostId)
     }
 
     "delete post by id" in {

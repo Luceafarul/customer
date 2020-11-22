@@ -10,7 +10,7 @@ val testcontainersScalaVersion = "0.38.4"
 
 Test / parallelExecution := false
 
-Test / fork := false
+Test / fork := true
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
