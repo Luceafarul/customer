@@ -3,15 +3,18 @@ package example.web
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import com.typesafe.scalalogging.Logger
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import example.domain.{Customer, Post}
 import example.service.{CustomerService, PostService}
+import io.circe.generic.auto._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class CustomerController(private val customerService: CustomerService,
-                         private val postService: PostService) extends Directives {
+                         private val postService: PostService) extends Directives with FailFastCirceSupport {
+
   private val log = Logger[CustomerController]
 
   def route: Route = concat(

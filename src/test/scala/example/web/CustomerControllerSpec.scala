@@ -6,11 +6,14 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import example.config.Config
 import example.database.{DatabaseService, FlywayService}
 import example.domain.{Customer, Post}
 import example.repository.{CustomerRepository, PostRepository}
 import example.service.{CustomerService, PostService}
+import io.circe.generic.auto._
+import io.circe.syntax._
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
@@ -25,7 +28,8 @@ class CustomerControllerSpec extends AnyWordSpec
   with BeforeAndAfterAll
   with Config
   with MockFactory
-  with ForAllTestContainer {
+  with ForAllTestContainer
+  with FailFastCirceSupport {
 
   override val container: PostgreSQLContainer = PostgreSQLContainer(
     dockerImageNameOverride = "postgres:9.6",
