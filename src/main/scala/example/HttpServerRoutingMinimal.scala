@@ -2,16 +2,21 @@ package example
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import example.database.PostgresService
+import example.config.Config
+import example.database.{FlywayService, PostgresService}
 import example.repository.{CustomerRepository, PostRepository}
 import example.service.{CustomerService, PostService}
 import example.web.CustomerController
 
 import scala.io.StdIn
 
-object HttpServerRoutingMinimal extends App {
+object HttpServerRoutingMinimal extends App with Config {
   implicit val system = ActorSystem("consumer-system")
   implicit val executionContext = system.dispatcher
+
+  // TODO how it's should be done?
+  private val flywayService = new FlywayService(dbUrl, dbUser, dbPassword)
+  flywayService.migrateDatabase
 
   private val databaseService = new PostgresService
 

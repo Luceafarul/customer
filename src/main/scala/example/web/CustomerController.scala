@@ -3,21 +3,17 @@ package example.web
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import com.typesafe.scalalogging.Logger
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import example.domain.{Customer, Post}
 import example.service.{CustomerService, PostService}
+import io.circe.generic.auto._
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-import io.circe._
-import io.circe.parser._
-import io.circe.generic.auto._
-import io.circe.syntax._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-
 class CustomerController(private val customerService: CustomerService,
-                         private val postService: PostService) extends Directives {
+                         private val postService: PostService) extends Directives with FailFastCirceSupport {
 
   private val log = Logger[CustomerController]
 
@@ -26,7 +22,7 @@ class CustomerController(private val customerService: CustomerService,
       path("customers" / LongNumber) { id =>
         onComplete(customerService.get(id)) {
           case Success(c) => c match {
-            case Some(customer) => complete(customer.asJson.toString)
+            case Some(customer) => complete(customer)
             case None => complete(StatusCodes.NotFound)
           }
           case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
@@ -39,7 +35,7 @@ class CustomerController(private val customerService: CustomerService,
         entity(as[Customer]) { customer =>
           val created: Future[Customer] = customerService.create(customer)
           onComplete(created) {
-            case Success(c) => complete(c.asJson.toString)
+            case Success(c) => complete(c)
             case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
             case Failure(e) => logAndReturnServerError(e)
           }
