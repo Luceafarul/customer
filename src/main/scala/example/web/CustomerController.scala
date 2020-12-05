@@ -19,7 +19,7 @@ class CustomerController(private val customerService: CustomerService,
 
   def route: Route = concat(
     get {
-      path("customers" / LongNumber) { id =>
+      path("api" / "customers" / LongNumber) { id =>
         onComplete(customerService.get(id)) {
           case Success(c) => c match {
             case Some(customer) => complete(customer)
@@ -31,7 +31,7 @@ class CustomerController(private val customerService: CustomerService,
       }
     },
     post {
-      path("customers") {
+      path("api" / "customers") {
         entity(as[Customer]) { customer =>
           val created: Future[Customer] = customerService.create(customer)
           onComplete(created) {
@@ -43,7 +43,7 @@ class CustomerController(private val customerService: CustomerService,
       }
     },
     delete {
-      path("customers" / LongNumber) { id =>
+      path("api" / "customers" / LongNumber) { id =>
         onComplete(customerService.delete(id)) {
           case Success(_) => complete(StatusCodes.NoContent)
           case Failure(e) if NonFatal(e.getCause) => logAndReturnBadRequest(e)
