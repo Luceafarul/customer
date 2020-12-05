@@ -73,18 +73,18 @@ class CustomerControllerSpec extends AnyWordSpec
     "return NotFound if customer does not exist" in {
       val notExistedId = 777
 
-      Get(s"/customers/$notExistedId") ~> route ~> check {
+      Get(s"/api/customers/$notExistedId") ~> route ~> check {
         status shouldBe StatusCodes.NotFound
       }
     }
 
     "return customer by id if existing" in {
-      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+      val createdCustomer = Post("/api/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
         responseAs[Customer]
       }
 
-      Get(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
+      Get(s"/api/customers/${createdCustomer.id.get}") ~> route ~> check {
         status shouldBe StatusCodes.OK
 
         val foundCustomer = responseAs[Customer]
@@ -93,7 +93,7 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return created customer" in {
-      Post("/customers", customer) ~> route ~> check {
+      Post("/api/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
 
         val created = responseAs[Customer]
@@ -103,16 +103,16 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "deleted existed customer by id" in {
-      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+      val createdCustomer = Post("/api/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
         responseAs[Customer]
       }
 
-      Delete(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
+      Delete(s"/api/customers/${createdCustomer.id.get}") ~> route ~> check {
         status shouldBe StatusCodes.NoContent
       }
 
-      Get(s"/customers/${createdCustomer.id.get}") ~> route ~> check {
+      Get(s"/api/customers/${createdCustomer.id.get}") ~> route ~> check {
         status shouldBe StatusCodes.NotFound
       }
     }
@@ -126,7 +126,7 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return created post" in {
-      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+      val createdCustomer = Post("/api/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
         responseAs[Customer]
       }
@@ -143,7 +143,7 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return post by id if existing" in {
-      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+      val createdCustomer = Post("/api/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
         responseAs[Customer]
       }
@@ -162,7 +162,7 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "return all customer's post by customer id" in {
-      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+      val createdCustomer = Post("/api/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
         responseAs[Customer]
       }
@@ -186,7 +186,7 @@ class CustomerControllerSpec extends AnyWordSpec
     }
 
     "deleted existed post by id" in {
-      val createdCustomer = Post("/customers", customer) ~> route ~> check {
+      val createdCustomer = Post("/api/customers", customer) ~> route ~> check {
         status shouldBe StatusCodes.OK
         responseAs[Customer]
       }
@@ -210,7 +210,7 @@ class CustomerControllerSpec extends AnyWordSpec
         .when(existedCustomerId)
         .returns(Future.failed(new UnsupportedOperationException))
 
-      Get(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+      Get(s"/api/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.BadRequest
       }
     }
@@ -220,7 +220,7 @@ class CustomerControllerSpec extends AnyWordSpec
         .when(existedCustomerId)
         .returns(Future.failed(new OutOfMemoryError("Exception for tests")))
 
-      Get(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+      Get(s"/api/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
     }
@@ -230,7 +230,7 @@ class CustomerControllerSpec extends AnyWordSpec
         .when(customer)
         .returns(Future.failed(new UnsupportedOperationException))
 
-      Post("/customers", customer) ~> Route.seal(routeWithStub) ~> check {
+      Post("/api/customers", customer) ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.BadRequest
       }
     }
@@ -240,7 +240,7 @@ class CustomerControllerSpec extends AnyWordSpec
         .when(customer)
         .returns(Future.failed(new OutOfMemoryError("Exception for tests")))
 
-      Post("/customers", customer) ~> Route.seal(routeWithStub) ~> check {
+      Post("/api/customers", customer) ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
     }
@@ -250,7 +250,7 @@ class CustomerControllerSpec extends AnyWordSpec
         .when(existedCustomerId)
         .returns(Future.failed(new UnsupportedOperationException))
 
-      Delete(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+      Delete(s"/api/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.BadRequest
       }
     }
@@ -260,7 +260,7 @@ class CustomerControllerSpec extends AnyWordSpec
         .when(existedCustomerId)
         .returns(Future.failed(new OutOfMemoryError("Exception for tests")))
 
-      Delete(s"/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
+      Delete(s"/api/customers/$existedCustomerId") ~> Route.seal(routeWithStub) ~> check {
         status shouldBe StatusCodes.InternalServerError
       }
     }
