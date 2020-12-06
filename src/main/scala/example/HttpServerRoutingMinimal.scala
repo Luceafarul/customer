@@ -6,7 +6,7 @@ import example.config.Config
 import example.database.{FlywayService, PostgresService}
 import example.repository.{CustomerRepository, PostRepository}
 import example.service.{CustomerService, PostService}
-import example.web.CustomerController
+import example.web.{Api, CustomerController, PostController}
 
 import scala.io.StdIn
 
@@ -28,9 +28,9 @@ object HttpServerRoutingMinimal extends App with Config {
 
   private val postService = new PostService(postRepository)
 
-  private val routes = new CustomerController(customerService, postService)
+  private val api = new Api(customerService, postService)
 
-  private val bindingFuture = Http().newServerAt("localhost", 8080).bind(routes.route)
+  private val bindingFuture = Http().newServerAt("localhost", 8080).bind(api.route)
 
   println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
 
